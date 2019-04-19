@@ -1,0 +1,38 @@
+<html>
+
+<head>
+	<script src="anime.min.js"></script>
+	<script src="https://threejs.org/build/three.min.js"></script>
+	<script src="postprocessing/EffectComposer.js"></script>
+	<script src="postprocessing/RenderPass.js"></script>
+	<script src="postprocessing/ShaderPass.js"></script>
+	<script src="shaders/CopyShader.js"></script>
+	<script src="shaders/LuminosityHighPassShader.js"></script>
+	<script src="postprocessing/UnrealBloomPass.js"></script>
+	<script src="loaders/GLTFLoader.js"></script>
+	<script src="libs/stats.min.js"></script>
+	<script src="libs/dat.gui.min.js"></script>
+</head>
+<!-- Audio from https://freesound.org/people/arnaud%20coutancier/sounds/271323/
+	Lincenced under Attribution-NonCommercial 3.0 Unported (CC BY-NC 3.0)
+-->
+
+<body>
+	<audio loop id="ambient" preload="auto" style="display: none">
+		<source src="nidra.mp3" type="audio/mp3">
+	</audio>
+
+	<section id="loading-screen">
+		<div id="loader"></div>
+	</section>
+
+	<div id="start-screen">
+		<button id="start" type="button">Start Demo</button>
+	</div>
+
+
+	<script src="script.js"></script>
+	<script src="storyboard.js"></script>
+	<link rel="stylesheet" type="text/css" href="styles.css">
+
+</body>

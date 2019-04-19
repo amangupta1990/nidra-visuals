@@ -1,6 +1,6 @@
 // ported from http://oos.moxiecode.com/js_webgl/forest/index.html
 
-let camera, cameraTarget, scene, renderer, clock, textureLoader, glTFLoader, metronome;
+let camera, cameraTarget, scene, renderer, clock, textureLoader, glTFLoader, metronome, composer, bloomPass, moon;
 
 let ground1, ground2;
 let animatedRings = [];
@@ -9,8 +9,7 @@ let particles1, particles2;
 const trees = new Set();
 const rocks = new Set();
 const flowers = new Set();
-var context = new AudioContext();
-var analyser = context.createAnalyser();
+
 var soundBuffer = null;
 var source = null;
 var moonRing = null;
@@ -19,12 +18,26 @@ var moonRingAnimParms = {
 	opacity: 1,
 	moonScale: 1
 }
+
+var clickCounter = 0;
+
 let r = 0;
 
-init();
+var bloomParams = {
+	exposure: 0.1,
+	bloomStrength: 0.25,
+	bloomThreshold: 0.25,
+	bloomRadius: 1
+};
+
+
+
+
+window.onload = onLoad
 
 function init() {
 
+	clock = new THREE.Clock();
 	camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 100000);
 	cameraTarget = new THREE.Vector3(0, 0, - 400);
 
@@ -35,7 +48,7 @@ function init() {
 
 	//
 
-	const loadingManager = new THREE.LoadingManager(onLoad);
+	const loadingManager = new THREE.LoadingManager();
 
 	textureLoader = new THREE.TextureLoader(loadingManager);
 	glTFLoader = new THREE.GLTFLoader(loadingManager);
@@ -44,6 +57,8 @@ function init() {
 
 	var ambientLight = new THREE.AmbientLight(0xffffff);
 	scene.add(ambientLight);
+
+
 
 	addGround();
 	addTrees();
@@ -59,6 +74,24 @@ function init() {
 	renderer = new THREE.WebGLRenderer({ antialias: true });
 	renderer.setPixelRatio(window.devicePixelRatio);
 	renderer.setSize(window.innerWidth, window.innerHeight);
+
+
+	var renderScene = new THREE.RenderPass( scene, camera );
+	bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+	bloomPass.threshold = bloomParams.bloomThreshold;
+	bloomPass.strength = bloomParams.bloomStrength;
+	bloomPass.radius = bloomParams.bloomRadius;
+	renderer.toneMappingExposure = bloomParams.exposure
+	composer = new THREE.EffectComposer(renderer);
+	composer.setSize(window.innerWidth, window.innerHeight);
+	composer.addPass(renderScene);
+	composer.addPass(bloomPass);
+	
+	
+
+	
+
+
 	document.body.appendChild(renderer.domElement);
 
 	//
@@ -67,8 +100,29 @@ function init() {
 
 	// 
 
-	const startButton = document.getElementById('start');
-	startButton.addEventListener('click', onStart, false);
+	var gui = new dat.GUI();
+	gui.add( bloomParams, 'exposure', 0.1, 2 ).onChange( function ( value ) {
+		renderer.toneMappingExposure = Math.pow( value, 4.0 );
+	} );
+	gui.add( bloomParams, 'bloomThreshold', 0.0, 1.0 ).onChange( function ( value ) {
+		bloomPass.threshold = Number( value );
+	} );
+	gui.add( bloomParams, 'bloomStrength', 0.0, 3.0 ).onChange( function ( value ) {
+		bloomPass.strength = Number( value );
+	} );
+	gui.add( bloomParams, 'bloomRadius', 0.0, 1.0 ).step( 0.01 ).onChange( function ( value ) {
+		bloomPass.radius = Number( value );
+	} );
+	window.onresize = function () {
+		var width = window.innerWidth;
+		var height = window.innerHeight;
+		camera.aspect = width / height;
+		camera.updateProjectionMatrix();
+		renderer.setSize( width, height );
+		composer.setSize( width, height );
+	};
+
+
 
 }
 
@@ -87,12 +141,13 @@ function animate() {
 	requestAnimationFrame(animate);
 
 	const delta = clock.getDelta();
-	let ticks = metronome.tick();
-	console.log(ticks)
-
+	if (metronome) {
+		let ticks = metronome.tick();
+		
+	}
 	run(delta);
 
-	renderer.render(scene, camera);
+	composer.render();
 
 }
 
@@ -120,12 +175,9 @@ function run(delta) {
 	particles2.position.y = Math.sin(r * 2) + 100;
 
 	// respawn trees if necessary
-	analyser.fftSize = 256;
-	var data = new Uint8Array(analyser.frequencyBinCount);
-	analyser.getByteFrequencyData(data);
 
 	
-	
+
 
 
 	for (let tree of trees) {
@@ -137,25 +189,28 @@ function run(delta) {
 
 	// respawn rocks if necessary
 
+
+
 	for (let rock of rocks) {
 
 		rock.position.z += speed;
 		if (rock.position.z > camera.position.z) rock.position.z -= 3000;
-		rock.material.color.setRGB(data[10], data[20], data[30])
+
+
+
+
+		//rock.material.color.setRGB(data[10], data[20], data[30])
 
 	}
 
 	// respawn flowers if necessary
-	let i = 0;
+
 	for (let flower of flowers) {
 
 		flower.position.z += speed;
-
-		
-		flower.material.color.setRGB(data[5], data[5], data[5])
-
 		if (flower.position.z > camera.position.z) flower.position.z -= 3000;
-		i++;
+		
+	
 	}
 
 	// respawn particles if necessary
@@ -176,6 +231,17 @@ function run(delta) {
 	if (ground1.position.z - 10000 > camera.position.z) ground1.position.z -= 40000;
 
 	if (ground2.position.z - 10000 > camera.position.z) ground2.position.z -= 40000;
+
+
+	// find animations and play them
+
+	animation = storyBoard.find(s=> s.tick == metronome.tick() )
+
+	if(animation){
+		if(!animation.done){
+			animation.anim()
+		}
+	}
 
 }
 
@@ -296,6 +362,11 @@ function addRocks() {
 			scene.add(mesh);
 			rocks.add(mesh);
 
+		
+
+		
+		
+
 		}
 
 	});
@@ -326,7 +397,6 @@ function addFlowers() {
 
 			scene.add(mesh);
 			flowers.add(mesh);
-
 		}
 
 	});
@@ -359,85 +429,14 @@ function addMoon() {
 	const texture = textureLoader.load('https://yume.human-interactive.org/examples/forest/moon.png');
 
 	const material = new THREE.SpriteMaterial({ map: texture, fog: false, opacity: 0.1 });
-	const moon = new THREE.Sprite(material);
+    moon = new THREE.Sprite(material);
 	moon.position.set(0, 2500, - 2500);
 	moon.scale.set(500 * 2, 500 * 2, 1);
 
-	scene.add(moon);
-
-
-	setInterval(() => {
-
-
-
-		var tl = anime.timeline({
-			easing: 'cubicBezier(.5, .05, .1, .3)',
-			duration: 1000,
-			complete: function () {
-
-				var tl2 = anime.timeline({
-					easing: 'cubicBezier(.5, .05, .1, .3)',
-					duraton: 500
-				})
-					.add(({
-						targets: moonRingAnimParms,
-						scale: 1,
-						opacity: 0,
-						loop: false,
-						duration: 1000,
-
-						update: function () {
-
-							moonRing.scale.set(moonRingAnimParms.scale, moonRingAnimParms.scale, moonRingAnimParms.scale)
-							moonRing.material.opacity = moonRingAnimParms.opacity;
-
-						}
-					}))
-					.add(({
-						targets: moonRingAnimParms,
-						scale: 0,
-						opacity: 1,
-						loop: false,
-						duration: 0,
-						update: function () {
-
-							moonRing.scale.set(moonRingAnimParms.scale, moonRingAnimParms.scale, moonRingAnimParms.scale)
-							moonRing.material.opacity = moonRingAnimParms.opacity;
-
-						}
-					}))
-			}
-		});
-
-		// Add children
-		tl
-			.add({
-				targets: moonRingAnimParms,
-				moonScale: 1.5,
-				duration: 250,
-				update: function () {
-
-					moon.scale.set(500 * moonRingAnimParms.moonScale, 500 * moonRingAnimParms.moonScale, 1);
-				}
-			})
-			.add({
-				targets: moonRingAnimParms,
-				moonScale: 1,
-				duration: 250,
-				update: function () {
-
-					moon.scale.set(500 * moonRingAnimParms.moonScale, 500 * moonRingAnimParms.moonScale, 1);
-				}
-			})
-
-
 	
 
-	}, 3000);
 
-
-
-
+	scene.add(moon);
 
 
 }
@@ -447,7 +446,7 @@ function addCloud() {
 	const texture = textureLoader.load('https://yume.human-interactive.org/examples/forest/cloud.png');
 	texture.minFilter = THREE.LinearFilter;
 
-	const material = new THREE.SpriteMaterial({ map: texture, opacity: 0.05 });
+	const material = new THREE.SpriteMaterial({ map: texture, opacity: 0.5 });
 	const cloud = new THREE.Sprite(material);
 	cloud.position.set(300, 2000, - 1400);
 	cloud.scale.set(749 * 8, 328 * 2, 1);
@@ -497,6 +496,8 @@ function onLoad() {
 
 	const loadingScreen = document.getElementById('loading-screen');
 	loadingScreen.classList.add('fade-out');
+	const startButton = document.getElementById('start');
+	startButton.addEventListener('click', onStart, false);
 
 	loadingScreen.addEventListener('transitionend', onTransitionEnd, false);
 
@@ -515,20 +516,15 @@ function onStart(event) {
 
 	request.responseType = 'arraybuffer';
 	request.onload = function () {
-		context.decodeAudioData(request.response, function (buffer) {
-			source = context.createBufferSource();
-			source.buffer = buffer;
 
-			source.connect(context.destination);
-			source.connect(analyser);
-			metronome = new Metronome(98);
-			clock = metronome.clock;
-			metronome.play();
-			animate();
-			source.start();
-			startScreen.classList.add('fade-out');
-			
-		})
+		const ambient = document.getElementById('ambient');
+		metronome = new Metronome(98, ambient);
+		init();
+		ambient.play();
+		animate();
+		startScreen.classList.add('fade-out');
+
+
 	}
 
 	request.send()
@@ -546,16 +542,19 @@ function onTransitionEnd(event) {
 
 
 class Metronome {
-	constructor(BPM){
-		this.clock = new THREE.Clock({autoStart:false});
+	constructor(BPM, sound) {
+
 
 		this.tickCount = 0;
 		this.playing = true;
 		this.start = Date.now();
-		this.tickFactor = BPM * 32
-		this.tick();
-		this.currentTick =0;
-		
+		this.bpm = BPM;
+		this.currentTick = 0;
+		this.track = sound;
+		this.totalClicks = (sound.duration * (this.bpm / 60)) | 0;
+		this.bars = 0;
+		this.quaterNoteLength = (BPM / 60) * 1000;
+
 
 	}
 
@@ -564,24 +563,29 @@ class Metronome {
 		this.playing = true;
 		this.start = Date.now();
 		this.clock.start();
-	  }
+	}
 
-	  tick() {
+	tick() {
 		// if (!this.playing) return;
 
 		// Compute the number of ticks that fit in the
 		// amount of time passed since we started
-		let diff = Date.now() - this.start;
-	  
+
+		let diff = this.track.currentTime;
+
 		// first form a large integer, which JS can cope with just fine,
 		// and only use division as the final operation.
-		 this.tickCount = ((diff*this.tickFactor)/60000)|0;
-	  
+
+		this.tickCount = (diff * (this.bpm / 60)) | 0;
+
+
+
+
 		// Inform each track that there is a tick update,
 		// and then schedule the next tick.
-	
-		
+
+
 		return this.tickCount
-		
-	  }
+
+	}
 }
