@@ -67,7 +67,8 @@ function init() {
 	addMoon();
 	addMoonrings();
 	addCloud();
-	addParticles()
+	addParticles();
+	addFox();
 
 	//
 
@@ -327,6 +328,42 @@ function addTrees() {
 			trees.add(mesh);
 
 		}
+
+	});
+
+}
+
+function addFox() {
+
+	glTFLoader.load('fox/scene.gltf', (gltf) => {
+		debugger;
+		const fox = gltf.scene;
+
+	
+
+			const scale = 2 + (Math.random() * 1.5);
+
+			const mesh = fox;
+
+			mesh.scale.set(scale * 1.5, scale * 2, scale * 1.5);
+
+			mesh.rotation.x = (Math.random() * 0.2) - 0.1;
+			mesh.rotation.y = Math.random() * Math.PI;
+			mesh.rotation.z = (Math.random() * 0.2) - 0.1;
+
+			mesh.position.x = (Math.random() * 4000) - 2000;
+			mesh.position.y = - 400;
+			mesh.position.z = (Math.random() * 3000) - 3000;
+
+			// keep the way through the forest free of trees
+
+			if (mesh.position.x < 200 && mesh.position.x > 0) mesh.position.x += 200;
+			if (mesh.position.x > - 200 && mesh.position.x < 0) mesh.position.x -= 200;
+
+			scene.add(mesh);
+			trees.add(mesh);
+
+		
 
 	});
 
