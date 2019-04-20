@@ -1,6 +1,6 @@
 // ported from http://oos.moxiecode.com/js_webgl/forest/index.html
 
-let camera, cameraTarget, scene, renderer, clock, textureLoader, glTFLoader, metronome, composer, bloomPass, moon;
+let camera, cameraTarget, scene, renderer, clock, textureLoader, glTFLoader, metronome, composer, bloomPass, moon, mixer, fox;
 
 let ground1, ground2;
 let animatedRings = [];
@@ -30,6 +30,14 @@ var bloomParams = {
 	bloomRadius: 1
 };
 
+// TODO: remove 
+
+// var bloomParams = {
+// 	exposure: 1,
+// 	bloomStrength: 1,
+// 	bloomThreshold: 1,
+// 	bloomRadius: 1
+// };
 
 
 
@@ -77,7 +85,7 @@ function init() {
 	renderer.setSize(window.innerWidth, window.innerHeight);
 
 
-	var renderScene = new THREE.RenderPass( scene, camera );
+	var renderScene = new THREE.RenderPass(scene, camera);
 	bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
 	bloomPass.threshold = bloomParams.bloomThreshold;
 	bloomPass.strength = bloomParams.bloomStrength;
@@ -87,10 +95,10 @@ function init() {
 	composer.setSize(window.innerWidth, window.innerHeight);
 	composer.addPass(renderScene);
 	composer.addPass(bloomPass);
-	
-	
 
-	
+
+
+
 
 
 	document.body.appendChild(renderer.domElement);
@@ -102,25 +110,25 @@ function init() {
 	// 
 
 	var gui = new dat.GUI();
-	gui.add( bloomParams, 'exposure', 0.1, 2 ).onChange( function ( value ) {
-		renderer.toneMappingExposure = Math.pow( value, 4.0 );
-	} );
-	gui.add( bloomParams, 'bloomThreshold', 0.0, 1.0 ).onChange( function ( value ) {
-		bloomPass.threshold = Number( value );
-	} );
-	gui.add( bloomParams, 'bloomStrength', 0.0, 3.0 ).onChange( function ( value ) {
-		bloomPass.strength = Number( value );
-	} );
-	gui.add( bloomParams, 'bloomRadius', 0.0, 1.0 ).step( 0.01 ).onChange( function ( value ) {
-		bloomPass.radius = Number( value );
-	} );
+	gui.add(bloomParams, 'exposure', 0.1, 2).onChange(function (value) {
+		renderer.toneMappingExposure = Math.pow(value, 4.0);
+	});
+	gui.add(bloomParams, 'bloomThreshold', 0.0, 1.0).onChange(function (value) {
+		bloomPass.threshold = Number(value);
+	});
+	gui.add(bloomParams, 'bloomStrength', 0.0, 3.0).onChange(function (value) {
+		bloomPass.strength = Number(value);
+	});
+	gui.add(bloomParams, 'bloomRadius', 0.0, 1.0).step(0.01).onChange(function (value) {
+		bloomPass.radius = Number(value);
+	});
 	window.onresize = function () {
 		var width = window.innerWidth;
 		var height = window.innerHeight;
 		camera.aspect = width / height;
 		camera.updateProjectionMatrix();
-		renderer.setSize( width, height );
-		composer.setSize( width, height );
+		renderer.setSize(width, height);
+		composer.setSize(width, height);
 	};
 
 
@@ -144,10 +152,11 @@ function animate() {
 	const delta = clock.getDelta();
 	if (metronome) {
 		let ticks = metronome.tick();
-		
+
 	}
 	run(delta);
-
+	if(mixer)
+	mixer.update(delta);
 	composer.render();
 
 }
@@ -177,8 +186,16 @@ function run(delta) {
 
 	// respawn trees if necessary
 
-	
+	if(fox){
 
+	if(fox.clip.time < 8 )
+		fox.position.z += speed;
+	else if(fox.clip.time < 10 )
+		fox.position.z += speed-10;
+	else fox.position.z += speed -20;
+	
+	if (fox.position.z > camera.position.z) fox.position.z -= 3000;
+	}
 
 
 	for (let tree of trees) {
@@ -210,8 +227,8 @@ function run(delta) {
 
 		flower.position.z += speed;
 		if (flower.position.z > camera.position.z) flower.position.z -= 3000;
-		
-	
+
+
 	}
 
 	// respawn particles if necessary
@@ -336,34 +353,45 @@ function addTrees() {
 function addFox() {
 
 	glTFLoader.load('fox/scene.gltf', (gltf) => {
-		debugger;
-		const fox = gltf.scene;
+		
+		fox = gltf.scene;
 
-	
 
-			const scale = 2 + (Math.random() * 1.5);
-
-			const mesh = fox;
-
-			mesh.scale.set(scale * 1.5, scale * 2, scale * 1.5);
-
-			mesh.rotation.x = (Math.random() * 0.2) - 0.1;
-			mesh.rotation.y = Math.random() * Math.PI;
-			mesh.rotation.z = (Math.random() * 0.2) - 0.1;
-
-			mesh.position.x = (Math.random() * 4000) - 2000;
-			mesh.position.y = - 400;
-			mesh.position.z = (Math.random() * 3000) - 3000;
-
-			// keep the way through the forest free of trees
-
-			if (mesh.position.x < 200 && mesh.position.x > 0) mesh.position.x += 200;
-			if (mesh.position.x > - 200 && mesh.position.x < 0) mesh.position.x -= 200;
-
-			scene.add(mesh);
-			trees.add(mesh);
 
 		
+
+		const mesh = fox;
+		fox.fog = true;
+		materialObj = new THREE.MeshBasicMaterial({ color: "#ffffff", skinning:true });
+		fox.traverse(function (child) {
+			if (child instanceof THREE.Mesh) {
+				child.material = materialObj;
+			}
+		});
+		mesh.scale.set( 3,  3,   3);
+
+		//  mesh.rotation.x = (Math.random() * 0.2) - 0.1;
+		mesh.rotation.y = Math.PI;
+		// mesh.rotation.z = (Math.random() * 0.2) - 0.1;
+
+		mesh.position.x = -400
+		mesh.position.y = - 400;
+		// mesh.position.z = (Math.random() * 3000) - 3000;
+
+		// keep the way through the forest free of trees
+
+
+
+		scene.add(mesh);
+	
+
+
+		 mixer = new THREE.AnimationMixer(gltf.scene);
+		 console.log(gltf.animations)
+		 debugger;
+		 fox.clip = mixer.clipAction( gltf.animations[0] );
+		 fox.clip.play();
+
 
 	});
 
@@ -399,10 +427,10 @@ function addRocks() {
 			scene.add(mesh);
 			rocks.add(mesh);
 
-		
 
-		
-		
+
+
+
 
 		}
 
@@ -466,11 +494,11 @@ function addMoon() {
 	const texture = textureLoader.load('https://yume.human-interactive.org/examples/forest/moon.png');
 
 	const material = new THREE.SpriteMaterial({ map: texture, fog: false, opacity: 0.1 });
-    moon = new THREE.Sprite(material);
+	moon = new THREE.Sprite(material);
 	moon.position.set(0, 2500, - 2500);
 	moon.scale.set(500 * 2, 500 * 2, 1);
 
-	
+
 
 
 	scene.add(moon);
