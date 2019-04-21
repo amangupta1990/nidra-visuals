@@ -1,7 +1,7 @@
 // ported from http://oos.moxiecode.com/js_webgl/forest/index.html
 
-let camera, cameraTarget, scene, renderer, clock, textureLoader, glTFLoader, metronome, composer, bloomPass, moon, mixer, fox;
-
+let camera, cameraTarget, scene, renderer, clock, textureLoader, glTFLoader, metronome, composer, bloomPass, moon, mixer, fox, audioContext, stream;
+let volMeter;
 let ground1, ground2;
 let animatedRings = [];
 let particles1, particles2;
@@ -16,19 +16,14 @@ var moonRing = null;
 var moonRingAnimParms = {
 	scale: 0,
 	opacity: 1,
-	moonScale: 1
+	moonScale: 2
 }
 
 var clickCounter = 0;
 
 let r = 0;
 
-var bloomParams = {
-	exposure: 0.1,
-	bloomStrength: 0.25,
-	bloomThreshold: 0.25,
-	bloomRadius: 1
-};
+
 
 // TODO: remove 
 
@@ -152,8 +147,10 @@ function animate() {
 	const delta = clock.getDelta();
 	if (metronome) {
 		let ticks = metronome.tick();
+		console.log(ticks);
 
 	}
+	console.log(volMeter.volume);
 	run(delta);
 	if(mixer)
 	mixer.update(delta);
@@ -227,7 +224,7 @@ function run(delta) {
 
 		flower.position.z += speed;
 		if (flower.position.z > camera.position.z) flower.position.z -= 3000;
-
+		flower.material.color.setRGB(100*volMeter.volume,100*volMeter.volume,100*volMeter.volume)
 
 	}
 
@@ -260,6 +257,8 @@ function run(delta) {
 			animation.anim()
 		}
 	}
+
+	
 
 }
 
@@ -388,7 +387,6 @@ function addFox() {
 
 		 mixer = new THREE.AnimationMixer(gltf.scene);
 		 console.log(gltf.animations)
-		 debugger;
 		 fox.clip = mixer.clipAction( gltf.animations[0] );
 		 fox.clip.play();
 
@@ -444,7 +442,7 @@ function addFlowers() {
 
 		const flower = gltf.scene.children[0];
 
-		for (let i = 0; i < 30; i++) {
+		for (let i = 0; i < 100; i++) {
 
 			const scale = 1 + Math.random();
 
@@ -583,7 +581,12 @@ function onStart(event) {
 	request.onload = function () {
 
 		const ambient = document.getElementById('ambient');
+		audioContext = new AudioContext();
+		stream = audioContext.createMediaElementSource(ambient);
 		metronome = new Metronome(98, ambient);
+		volMeter = createAudioMeter(audioContext)
+		stream.connect(volMeter);
+		stream.connect(audioContext.destination)
 		init();
 		ambient.play();
 		animate();
