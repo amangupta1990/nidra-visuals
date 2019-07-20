@@ -6,4 +6,4 @@ the song started. These are counted with the BPM and time signature of the song.
 
 # running the demo.
 
-1. run npm install and then npm start to start the server. the project will not work correctly without being served.
+run npm install and then npm start to start the server. the project will not work correctly without being served.
