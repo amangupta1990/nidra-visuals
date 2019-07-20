@@ -136,11 +136,12 @@ var storyBoard = [{
 
 
 {
-    tick:67,
+    tick:126,
     anim:function(){
-           animateBloom(1.15 , 0.29, 1.81, 1, metronome.quaterNoteLength*2)
+        //    animateBloom(1.15 , 0.33, 1.81, 1, metronome.quaterNoteLength*2)
 }
 },
+
 
 
 {
@@ -153,7 +154,7 @@ var storyBoard = [{
 {
     tick:70,
     anim:function(){
-     //  animateBloom(0.1,0.4,0.2,1,metronome.quaterNoteLength*2)
+        animateBloom(1.15 , 0.33, 1.81, 1, metronome.quaterNoteLength*2)
 }
 },
 
@@ -175,5 +176,9 @@ var storyBoard = [{
 {tick:111,anim:function(){animateMoon();}},
 {tick:116,anim:function(){animateMoon();}},
 {tick:121,anim:function(){animateMoon();}},
+{tick:126,anim:function(){animateMoon();}},
+
+{tick:126,anim:function(){ animateBloom(1.15 , 0.33, 1.81, 1, metronome.quaterNoteLength*2)}},
+
 
 ]

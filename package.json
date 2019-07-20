@@ -1,0 +1,14 @@
+{
+  "name": "nidra",
+  "version": "1.0.0",
+  "description": "A visualization that interacts with music",
+  "main": "script.js",
+  "scripts": {
+    "start": "http-server"
+  },
+  "author": "Aman Gupta",
+  "license": "ISC",
+  "devDependencies": {
+    "http-server": "^0.11.1"
+  }
+}

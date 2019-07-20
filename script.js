@@ -104,27 +104,7 @@ function init() {
 
 	// 
 
-	var gui = new dat.GUI();
-	gui.add(bloomParams, 'exposure', 0.1, 2).onChange(function (value) {
-		renderer.toneMappingExposure = Math.pow(value, 4.0);
-	});
-	gui.add(bloomParams, 'bloomThreshold', 0.0, 1.0).onChange(function (value) {
-		bloomPass.threshold = Number(value);
-	});
-	gui.add(bloomParams, 'bloomStrength', 0.0, 3.0).onChange(function (value) {
-		bloomPass.strength = Number(value);
-	});
-	gui.add(bloomParams, 'bloomRadius', 0.0, 1.0).step(0.01).onChange(function (value) {
-		bloomPass.radius = Number(value);
-	});
-	window.onresize = function () {
-		var width = window.innerWidth;
-		var height = window.innerHeight;
-		camera.aspect = width / height;
-		camera.updateProjectionMatrix();
-		renderer.setSize(width, height);
-		composer.setSize(width, height);
-	};
+
 
 
 
@@ -150,7 +130,6 @@ function animate() {
 		console.log(ticks);
 
 	}
-	console.log(volMeter.volume);
 	run(delta);
 	if(mixer)
 	mixer.update(delta);
@@ -442,7 +421,7 @@ function addFlowers() {
 
 		const flower = gltf.scene.children[0];
 
-		for (let i = 0; i < 100; i++) {
+		for (let i = 0; i < 30; i++) {
 
 			const scale = 1 + Math.random();
 
@@ -489,7 +468,7 @@ function addMoonrings() {
 
 function addMoon() {
 
-	const texture = textureLoader.load('https://yume.human-interactive.org/examples/forest/moon.png');
+	const texture = textureLoader.load('moon.png');
 
 	const material = new THREE.SpriteMaterial({ map: texture, fog: false, opacity: 0.1 });
 	moon = new THREE.Sprite(material);
@@ -506,7 +485,7 @@ function addMoon() {
 
 function addCloud() {
 
-	const texture = textureLoader.load('https://yume.human-interactive.org/examples/forest/cloud.png');
+	const texture = textureLoader.load('cloud.png');
 	texture.minFilter = THREE.LinearFilter;
 
 	const material = new THREE.SpriteMaterial({ map: texture, opacity: 0.5 });
@@ -520,7 +499,7 @@ function addCloud() {
 
 function addParticles() {
 
-	const texture = textureLoader.load('https://yume.human-interactive.org/examples/forest/particle.png');
+	const texture = textureLoader.load('particle.png');
 
 	const material = new THREE.PointsMaterial({
 		color: 0x9274ce,
